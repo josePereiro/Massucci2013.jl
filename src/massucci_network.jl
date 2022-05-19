@@ -178,7 +178,7 @@ const MASSUCCI_NETWORK_STR = """
 """
     
 # ------------------------------------------------------------------
-function massucci_network()
+function massucci_network(T = CoreModel)
     
     # Parse
     dig = filter(!isempty, strip.(split(MASSUCCI_NETWORK_STR, "\n"; keepempty = false)))
@@ -250,11 +250,31 @@ function massucci_network()
         end
     end
     
+    # bounds
     lb = zeros(N)
     ub = zeros(N) .+ 1000.0
 
-    # TODO: create a COBREXA Model
+    # checkings
+    for _ in 1:3
+        for (i, met) in enumerate(met_ids)
+            c = count(!iszero, S[i,:])
+            if c == 1
+                @warn string("met (", met, ") is involved in onle one reaction! It will be deleted")
+                S[i,:] .= 0.0
+            end
+        end
+    end
+    
+    net0 = CoreModel(
+        #= S =# S,
+        #= b =# zeros(M),
+        #= c =# zeros(N),
+        #= lb =# lb,
+        #= ub =# ub,
+        #= rxns =# string.(rxn_ids),
+        #= mets =# string.(met_ids),
+    )
 
-    # return model
+    return convert(T, net0)
     
 end
