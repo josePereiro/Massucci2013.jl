@@ -1,31 +1,31 @@
 ## ------------------------------------------------------------------
 # Utils
-function extract_rxnid(line::AbstractString)
+function _extract_rxnid(line::AbstractString)
     rxn_id_reg = r"ν[A-Za-z0-9]+\s*\(.+\)"
     m = match(rxn_id_reg, line)
     return isnothing(m) ? "" : m.match
 end
 
-function extract_metid(word::AbstractString)
+function _extract_metid(word::AbstractString)
     met_id_reg = r"[A-Za-z][A-Za-z0-9]+"
     m = match(met_id_reg, word)
     return isnothing(m) ? "" : m.match
 end
 
-function extract_stoi_coe(word::AbstractString)
+function _extract_stoi_coe(word::AbstractString)
     reg = r"^[0-9]+$"
     m = match(reg, word)
     return isnothing(m) ? "" : m.match
 end
 
-function extract_arrow(word::AbstractString)
+function _extract_arrow(word::AbstractString)
     reg = r"^→$"
     m = match(reg, word)
     return isnothing(m) ? "" : m.match
 end
 
 
-function is_match(reg::Regex, w::String)
+function _is_match(reg::Regex, w::String)
     m = match(reg, w)
     return !isnothing(m)
 end
@@ -33,9 +33,9 @@ end
 # ------------------------------------------------------------------
 # The string was extracted from 
 # Massucci et al., “Energy Metabolism and Glutamate-Glutamine Cycle in the Brain.”
-# Supplementary materials
+# Supplementary materials pdf
 
-const MASSUCCI_NETWORK_STR = """
+const _MASSUCCI_NETWORK_RAW_STR = """
 1 νGLC(c) → GLCc
 2 νGLC(c → a) GLCc → GLCa
 3 νGLC(c → e) GLCc → GLCe
@@ -181,9 +181,9 @@ const MASSUCCI_NETWORK_STR = """
 function massucci_network(T = CoreModel)
     
     # Parse
-    dig = filter(!isempty, strip.(split(MASSUCCI_NETWORK_STR, "\n"; keepempty = false)))
+    dig = filter(!isempty, strip.(split(_MASSUCCI_NETWORK_RAW_STR, "\n"; keepempty = false)))
 
-    rxn_ids = extract_rxnid.(dig)
+    rxn_ids = _extract_rxnid.(dig)
     
     dig = replace.(dig, rxn_ids .=> "")
     dig = replace.(dig, r"^[0-9]+" .=> "")
@@ -201,21 +201,21 @@ function massucci_network(T = CoreModel)
         # parse
         for w in words
             # test stoi coe
-            stoi_str = extract_stoi_coe(w)
+            stoi_str = _extract_stoi_coe(w)
             if !isempty(stoi_str)
                 stoi = parse(Int, stoi_str)
                 continue
             end
 
             # test arrow
-            arrow_str = extract_arrow(w)
+            arrow_str = _extract_arrow(w)
             if !isempty(arrow_str)
                 sense *= -1
                 continue
             end
 
             # test metid 
-            met_id = extract_metid(w)
+            met_id = _extract_metid(w)
             if !isempty(met_id)
                 # I found a metabolite
                 stoi = isnothing(stoi) ? 1 * sense : stoi * sense
@@ -259,7 +259,7 @@ function massucci_network(T = CoreModel)
         for (i, met) in enumerate(met_ids)
             c = count(!iszero, S[i,:])
             if c == 1
-                @warn string("met (", met, ") is involved in onle one reaction! It will be deleted")
+                @warn string("met (", met, ") is involved in only one reaction! It will be deleted")
                 S[i,:] .= 0.0
             end
         end
